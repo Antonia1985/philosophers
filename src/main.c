@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: apavlopo <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/01 15:41:40 by apavlopo          #+#    #+#             */
+/*   Updated: 2025/05/01 15:41:49 by apavlopo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "philo.h"
 
 void    join_threads(pthread_t threads[], int id_c)
@@ -60,7 +72,7 @@ int main(int ac, char **av)
     pthread_t threads[id_c];
     die_f = die_flag_initialize();
     if (!die_f)
-	    return (1);   
+	    return (1);
     initialize_mutexes(forks, &log_mutex, &die_mutex, id_c);    
     while(i < id_c)   
     {   
@@ -69,14 +81,15 @@ int main(int ac, char **av)
             return (1);
         t_simulation *sim = simulation_initializer(ph, die_f, start, id_c);
         if (!sim)
-            return 1;       
+            return 1;
         simulation_add_mutexes(sim, &log_mutex, &die_mutex);
         pthread_create(&threads[i], NULL, task, sim);
         usleep(100);
         i++;
     }
-    join_threads(threads, id_c);    
+    join_threads(threads, id_c);
     destroy_mutexs(forks, id_c);
     clean_before_exit(&log_mutex, &die_mutex, die_f);
+    
     return(0);
 }
