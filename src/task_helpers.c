@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   task_helpers.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: apavlopo <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/05/01 15:47:00 by apavlopo          #+#    #+#             */
+/*   Updated: 2025/05/01 15:47:10 by apavlopo         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "philo.h"
 
 void    clean_after_death(pthread_mutex_t *mutex1, pthread_mutex_t *mutex2)
@@ -24,8 +36,7 @@ void    get_timestamps(t_simulation *sim, long *elapsed, long *timestamp)
     *timestamp = (now.tv_sec - sim->start.tv_sec) * 1000 
                 + (now.tv_usec - sim->start.tv_usec) / 1000;
     *elapsed = (now.tv_sec - sim->last_meal_time->tv_sec) * 1000 
-                + (now.tv_usec - sim->last_meal_time->tv_usec) / 1000;    
-
+                + (now.tv_usec - sim->last_meal_time->tv_usec) / 1000;
 }
 
 int   try_log_action_or_die(t_simulation *sim, const char * msg, 
@@ -39,13 +50,19 @@ int   try_log_action_or_die(t_simulation *sim, const char * msg,
     if (*(sim->die_f))
     {
         pthread_mutex_unlock(sim->die_mutex);
+        clean_after_death(mutex1, mutex2);
         return (0);
     }
     if (elapsed > sim->ph->time_to_die)
-    {
+    {        
         *(sim->die_f) = 1;
         pthread_mutex_unlock(sim->die_mutex);
         print_log(sim, " died", timestamp);
+ ///       ////
+        //pthread_mutex_lock(sim->log_mutex);
+      //  printf("elapsed: %li\n", elapsed);
+       // pthread_mutex_unlock(sim->log_mutex);   
+ ///       //// 
         clean_after_death(mutex1, mutex2);
         return (0);
     }
