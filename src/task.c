@@ -31,8 +31,9 @@ void    check_elapsed(t_simulation *sim, pthread_mutex_t *mutex1, pthread_mutex_
 
 int philo_takes_forks(t_simulation *sim)
 {
-    if (sim->ph->id % 2 == 0)
+    if (sim->ph->id % 2 == 0 && sim->total_ph > 3)
     {        
+        usleep(50);
         pthread_mutex_lock(sim->ph->left_fork);
         if (!try_log_action_or_die(sim, " has taken the LEFT fork",
                     sim->ph->left_fork, NULL))
@@ -43,18 +44,6 @@ int philo_takes_forks(t_simulation *sim)
                 sim->ph->left_fork, sim->ph->right_fork))
             return(0);
     }
-    else
-    {
-        pthread_mutex_lock(sim->ph->right_fork);
-        if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
-                sim->ph->right_fork, NULL))
-            return(0);
-        check_elapsed(sim, sim->ph->right_fork, NULL);
-        pthread_mutex_lock(sim->ph->left_fork);
-        if (!try_log_action_or_die(sim, " has taken the LEFT fork",
-                    sim->ph->left_fork, sim->ph->right_fork))
-            return(0);
-    } 
     return(1);
 }
 
@@ -91,12 +80,7 @@ void	*task(void *args)
 
     sim = (t_simulation *)args;
     i = 0;
-    if (sim->ph->id % 2 == 0)
-    {
-        try_log_action_or_die(sim, "is thinking", sim->log_mutex, NULL);
-        usleep(sim->ph->time_to_eat * 1000);
-    }
-		
+    	
     while (((sim->ph->repeat == 0) || i < sim->ph->repeat))
     {
         pthread_mutex_lock(sim->die_mutex);
@@ -105,8 +89,7 @@ void	*task(void *args)
             pthread_mutex_unlock(sim->die_mutex);
             break;
         }    
-        pthread_mutex_unlock(sim->die_mutex);
-        
+        pthread_mutex_unlock(sim->die_mutex);        
         if(sim->total_ph == 1)
         {
             pthread_mutex_lock(sim->ph->left_fork);
