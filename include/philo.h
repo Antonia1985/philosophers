@@ -65,8 +65,6 @@ void	*task(void *args);
 
 int     *die_flag_initialize();
 void    forks_initilizer( pthread_mutex_t forks[], int n);
-//t_philo    *philosopher_initializer1(int time_to_die, int time_to_eat, int time_to_sleep, int repeat);
-//void    philosopher_initializer2(t_philo *ph,int i, pthread_mutex_t forks[], int id_c);
 t_simulation    *simulation_initializer(t_philo *ph, int *die_f, struct timeval start, int id_c);
 void    simulation_add_mutexes(t_simulation *sim, pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex);
 struct timeval  *last_meal_initializer(t_simulation *sim, struct timeval start);
