@@ -34,27 +34,21 @@ typedef struct s_simulation{
     t_philo *ph;
     struct timeval start;
     int *die_f;
-    pthread_mutex_t	*die_mutex;
-    struct timeval *last_meal_time;
+    int *stop;
+    //int *first_run;
     int total_ph;
+    struct timeval *last_meal_time;    
+    pthread_mutex_t	*die_mutex;
     pthread_mutex_t *log_mutex;
+    pthread_mutex_t *last_meal_mutex;
+    pthread_mutex_t *stop_mutex;
 
 }t_simulation;
-
-typedef struct s_args{
-    
-    int total_ph;
-    int time_to_sleep;
-    int time_to_eat;
-    int time_to_die;
-    int repeat;    
-    pthread_mutex_t *forks[];
-}t_args;
-
 
 int     main(int ac, char **av);
 
 int     ft_atoi(const char *nptr);
+long	ft_atol(const char *nptr);
 
 void    clean_after_death(pthread_mutex_t *mutex1, pthread_mutex_t *mutex2);
 void    print_log(t_simulation *sim, const char * msg, long timestamp);
@@ -64,11 +58,12 @@ int   try_log_action_or_die(t_simulation *sim, const char * msg, pthread_mutex_t
 void	*task(void *args);
 
 int     *die_flag_initialize();
+int     *stop_flag_initialize();
 void    forks_initilizer( pthread_mutex_t forks[], int n);
-t_simulation    *simulation_initializer(t_philo *ph, int *die_f, struct timeval start, int id_c);
-void    simulation_add_mutexes(t_simulation *sim, pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex);
+t_simulation *simulation_initializer(t_philo *ph, int *die_f, int *stop, struct timeval start, int id_c, pthread_mutex_t *last_meal_mutex);
+void    simulation_add_mutexes(t_simulation *sim, pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex, pthread_mutex_t *stop_mutex);
 struct timeval  *last_meal_initializer(t_simulation *sim, struct timeval start);
 t_philo    *philosopher_initializer(int ac, char **av, int i, pthread_mutex_t forks[]);
-void    clean_before_exit(pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex, int *die_f);
+void    clean_before_exit(pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex, pthread_mutex_t *last_meal_mutex, pthread_mutex_t *stop_mutex,int *die_f, int *stop);
 
 #endif
