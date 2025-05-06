@@ -35,7 +35,7 @@ typedef struct s_simulation{
     struct timeval start;
     int *die_f;
     int *stop;
-    //int *first_run;
+    int *times;
     int total_ph;
     struct timeval *last_meal_time;    
     pthread_mutex_t	*die_mutex;
