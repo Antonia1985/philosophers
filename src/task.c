@@ -45,7 +45,10 @@ int	sleep_in_ms(t_simulation *sim, int ms)
 					+ (now.tv_usec - sim->start.tv_usec) / 1000;
 			*(sim->die_f) = 1;
 			pthread_mutex_unlock(sim->die_mutex);
-			print_log(sim, " died", timestamp);
+			pthread_mutex_lock(sim->stop_mutex);
+			*(sim->stop) = 1;
+			pthread_mutex_unlock(sim->stop_mutex);
+			print_log(sim, " died1", timestamp);
 			return (0);
 		}
 		pthread_mutex_unlock(sim->die_mutex);
@@ -57,28 +60,51 @@ int	sleep_in_ms(t_simulation *sim, int ms)
 
 int	philo_takes_fork(t_simulation *sim)
 {
-	if (sim->ph->id % 2 == 0)// && sim->total_ph > 3)
-	{
+	if (sim->total_ph % 2 == 1)
+	{	
+		if (sim->ph->id % 2 == 0)
+		{
+			usleep(500);
+		}
+		if(sim->ph->id == 1)
+		{
+			usleep(1000);
+		}
 		pthread_mutex_lock(sim->ph->left_fork);
 		if (!try_log_action_or_die(sim, " has taken the LEFT fork",
-			sim->ph->left_fork, NULL))
-		return (0);
+				sim->ph->left_fork, NULL))
+			return (0);
 		pthread_mutex_lock(sim->ph->right_fork);		
 		if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
 				sim->ph->left_fork, sim->ph->right_fork))
-		return (0);
+			return (0);
 	}
 	else
 	{
-		pthread_mutex_lock(sim->ph->right_fork);		
-		if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
-				sim->ph->left_fork, NULL))
-		return (0);
-		pthread_mutex_lock(sim->ph->left_fork);
-		if (!try_log_action_or_die(sim, " has taken the LEFT fork",
-			sim->ph->left_fork, sim->ph->right_fork))
-		return (0);
+		if (sim->ph->id % 2 == 0)
+		{
+			pthread_mutex_lock(sim->ph->left_fork);
+			if (!try_log_action_or_die(sim, " has taken the LEFT fork",
+					sim->ph->left_fork, NULL))
+				return (0);
+			pthread_mutex_lock(sim->ph->right_fork);		
+			if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
+					sim->ph->left_fork, sim->ph->right_fork))
+				return (0);
+		}
+		else
+		{		
+			pthread_mutex_lock(sim->ph->right_fork);		
+			if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
+					sim->ph->right_fork, NULL))
+				return (0);
+			pthread_mutex_lock(sim->ph->left_fork);
+			if (!try_log_action_or_die(sim, " has taken the LEFT fork",
+					sim->ph->left_fork, sim->ph->right_fork))
+				return (0);
+		}
 	}
+	
 	return (1);
 }
 
@@ -111,7 +137,6 @@ int philo_thinks(t_simulation *sim)
     return 1;
 }
 
-
 void	*task(void *args)
 {
 	t_simulation *sim;
@@ -119,9 +144,13 @@ void	*task(void *args)
 
 	sim = (t_simulation *)args;
 	i = 0;
-
 	while (((sim->ph->repeat == 0) || i < sim->ph->repeat))
 	{
+
+pthread_mutex_lock(sim->log_mutex);
+printf("i = %i ph = %i \n", i, sim->ph->id);
+pthread_mutex_unlock(sim->log_mutex);
+		*sim->times = i;
 		pthread_mutex_lock(sim->die_mutex);
 		if (*(sim->die_f) || *(sim->stop))
 		{
@@ -131,7 +160,6 @@ void	*task(void *args)
 		pthread_mutex_unlock(sim->die_mutex);
 		if (sim->total_ph == 1)
 		{
-			//pthread_mutex_lock(sim->ph->left_fork);
 			try_log_action_or_die(sim, "has taken the LEFT fork",
 				NULL, NULL);
 			while (1)
@@ -139,12 +167,10 @@ void	*task(void *args)
 					pthread_mutex_lock(sim->die_mutex);
 					int should_stop = (*(sim->die_f) || *(sim->stop));
 					pthread_mutex_unlock(sim->die_mutex);
-					if (should_stop) {
-						break; // Monitor told us to stop
-					}
-					usleep(1000); // Sleep briefly (e.g., 1ms) to avoid busy-waiting
-			}
-				
+					if (should_stop)
+						break;
+					usleep(1000);
+			}				
 			break ;
 		}
 		if (!philo_takes_fork(sim))
@@ -157,10 +183,8 @@ void	*task(void *args)
 			break ;
 		i++;
 	}
-	free(sim->last_meal_time);
-	free(sim->ph);
-	//free(sim->first_run);
-	free(sim->stop);
-	free(sim);
+	//free(sim->last_meal_time);
+	//free(sim->ph);
+	//free(sim);
 	return (NULL);
 }
