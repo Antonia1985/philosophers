@@ -41,37 +41,6 @@ t_philo	*philosopher_initializer(int ac, char **av, int i,
 	return (ph);
 }
 
-t_philo	*philosopher_initializer1(int time_to_die, int time_to_eat,
-		int time_to_sleep, int repeat)
-{
-	t_philo	*ph;
-
-	ph = malloc(sizeof(t_philo));
-	if (!ph)
-	{
-		printf("Failed to allocate memmory for philosopher");
-		return (NULL);
-	}
-	ph->time_to_die = time_to_die;
-	ph->time_to_eat = time_to_eat;
-	ph->time_to_sleep = time_to_sleep;
-	ph->repeat = 0;
-	if (repeat != 0)
-		ph->repeat = repeat;
-	return (ph);
-}
-
-void	philosopher_initializer2(t_philo *ph, int i, pthread_mutex_t forks[],
-		int id_c)
-{
-	ph->id = i + 1;
-	ph->left_fork = &forks[i];
-	if (id_c == 1)
-		ph->right_fork = NULL;
-	else
-		ph->right_fork = &forks[(i + 1) % id_c];
-}
-
 int	*die_flag_initialize(void)
 {
 	int	*die_f;
@@ -79,11 +48,25 @@ int	*die_flag_initialize(void)
 	die_f = malloc(sizeof(int));
 	if (!die_f)
 	{
-		printf("Failed to allocate memmory for die_f");
+		printf("Failed to allocate memmory for die_f flag");
 		return (NULL);
 	}
 	*die_f = 0;
 	return (die_f);
+}
+
+int	*stop_flag_initialize(void)
+{
+	int	*stop;
+
+	stop = malloc(sizeof(int));
+	if (!stop)
+	{
+		printf("Failed to allocate memmory for stop flag");
+		return (NULL);
+	}
+	*stop = 0;
+	return (stop);
 }
 
 void	forks_initilizer(pthread_mutex_t forks[], int n)
@@ -98,22 +81,36 @@ void	forks_initilizer(pthread_mutex_t forks[], int n)
 	}
 }
 
-t_simulation	*simulation_initializer(t_philo *ph, int *die_f,
-		struct timeval start, int id_c)
-{
+t_simulation	*simulation_initializer(t_philo *ph, int *die_f, int *stop,
+		struct timeval start, int id_c, pthread_mutex_t *last_meal_mutex)
+{	
+	//int *first_run;
 	t_simulation	*sim;
-
+	
+	/*first_run= malloc(sizeof(int));
+	if (!first_run)
+	{
+		printf("Failed to allocate memmory for first_run flag");
+		free(ph);
+		return (NULL);
+	}
+	*first_run = 1;*/
+	
 	sim = malloc(sizeof(t_simulation));
 	if (!sim)
 	{
 		printf("Failed to allocate memmory for sim");
 		free(ph);
+		//free(first_run);
 		return (NULL);
 	}
+	sim->stop = stop;
 	sim->die_f = die_f;
+	//sim->first_run = first_run;
 	sim->start = start;
 	sim->ph = ph;
 	sim->total_ph = id_c;
+	sim->last_meal_mutex = last_meal_mutex; 
 	sim->last_meal_time = last_meal_initializer(sim, start);
 	if (!sim->last_meal_time)
 		return (NULL);
@@ -121,10 +118,11 @@ t_simulation	*simulation_initializer(t_philo *ph, int *die_f,
 }
 
 void	simulation_add_mutexes(t_simulation *sim, pthread_mutex_t *log_mutex,
-		pthread_mutex_t *die_mutex)
+		pthread_mutex_t *die_mutex, pthread_mutex_t *stop_mutex)
 {
 	sim->log_mutex = log_mutex;
 	sim->die_mutex = die_mutex;
+    sim->stop_mutex = stop_mutex;
 }
 
 struct timeval	*last_meal_initializer(t_simulation *sim, struct timeval start)
@@ -137,6 +135,8 @@ struct timeval	*last_meal_initializer(t_simulation *sim, struct timeval start)
 		free(sim);
 		return (NULL);
 	}
+	pthread_mutex_lock(sim->last_meal_mutex);
 	*(sim->last_meal_time) = start;
+	pthread_mutex_unlock(sim->last_meal_mutex);
 	return (sim->last_meal_time);
 }
