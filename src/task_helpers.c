@@ -59,7 +59,7 @@ int	try_log_action_or_die(t_simulation *sim, const char *msg,
 	{
 		*(sim->die_f) = 1;
 		pthread_mutex_unlock(sim->die_mutex);
-		print_log(sim, " died", timestamp);
+		print_log(sim, " died2", timestamp);
 		clean_after_death(mutex1, mutex2);
 		return (0);
 	}
