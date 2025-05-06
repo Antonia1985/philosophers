@@ -84,29 +84,16 @@ void	forks_initilizer(pthread_mutex_t forks[], int n)
 t_simulation	*simulation_initializer(t_philo *ph, int *die_f, int *stop,
 		struct timeval start, int id_c, pthread_mutex_t *last_meal_mutex)
 {	
-	//int *first_run;
 	t_simulation	*sim;
-	
-	/*first_run= malloc(sizeof(int));
-	if (!first_run)
-	{
-		printf("Failed to allocate memmory for first_run flag");
-		free(ph);
-		return (NULL);
-	}
-	*first_run = 1;*/
-	
 	sim = malloc(sizeof(t_simulation));
 	if (!sim)
 	{
 		printf("Failed to allocate memmory for sim");
 		free(ph);
-		//free(first_run);
 		return (NULL);
 	}
 	sim->stop = stop;
 	sim->die_f = die_f;
-	//sim->first_run = first_run;
 	sim->start = start;
 	sim->ph = ph;
 	sim->total_ph = id_c;
@@ -114,6 +101,15 @@ t_simulation	*simulation_initializer(t_philo *ph, int *die_f, int *stop,
 	sim->last_meal_time = last_meal_initializer(sim, start);
 	if (!sim->last_meal_time)
 		return (NULL);
+	sim->times = malloc(sizeof(int));
+	if(!sim->times)
+	{
+		printf("Failed to allocate memmory for sim->times");
+		free(ph);
+		free(sim->times);
+		return (NULL);
+	}
+	*sim->times = 0;
 	return (sim);
 }
 
