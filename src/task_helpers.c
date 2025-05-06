@@ -32,8 +32,11 @@ void	get_timestamps(t_simulation *sim, long *elapsed, long *timestamp)
 	struct timeval	now;
 
 	gettimeofday(&now, NULL);
+	pthread_mutex_lock(sim->last_meal_mutex);
 	*elapsed = (now.tv_sec - sim->last_meal_time->tv_sec) * 1000 + (now.tv_usec
 			- sim->last_meal_time->tv_usec) / 1000;
+	pthread_mutex_unlock(sim->last_meal_mutex);
+	
 	*timestamp = (now.tv_sec - sim->start.tv_sec) * 1000 + (now.tv_usec
 			- sim->start.tv_usec) / 1000;
 }
