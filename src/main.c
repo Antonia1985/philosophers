@@ -59,21 +59,26 @@ void	clean_before_exit(pthread_mutex_t *log_mutex,
 
 void*	monitor_threads(void *args)
 {
+	t_simulation **sims = (t_simulation **)args;
+	long time_to_die = sims[0]->ph->time_to_die;
+	int id_c = sims[0]->total_ph;
+
     struct timeval now;
     long elapsed;
     int i;
-	int j;
-
-	t_simulation **sims = (t_simulation **)args;
+	
+	int all_philos_finished_eating = 0;
+	
     int someone_died = 0;
-	long time_to_die = sims[0]->ph->time_to_die;
-	int id_c = sims[0]->total_ph;
-	j = 0;
-    while (!someone_died && (*(sims[i]->times) < sims[i]->ph->repeat))
+	
+	
+    while (!someone_died && !all_philos_finished_eating)
     {
         i = 0;
-        while (i < id_c)
-        {			
+		int philos_done_this_round = 0; // Counter for philos who met repeat count
+		
+		while (i < id_c && !someone_died && !all_philos_finished_eating)
+		{	
 			gettimeofday(&now, NULL);
 			pthread_mutex_lock(sims[i]->last_meal_mutex);           
 			if (!sims[i]->last_meal_time) 
@@ -85,39 +90,46 @@ void*	monitor_threads(void *args)
 			elapsed = (now.tv_sec - sims[i]->last_meal_time->tv_sec) * 1000 +
 					(now.tv_usec - sims[i]->last_meal_time->tv_usec) / 1000;
 			pthread_mutex_unlock(sims[i]->last_meal_mutex);
-
-			if (elapsed > time_to_die)
+			
+			if (elapsed >= time_to_die)
 			{
 				pthread_mutex_lock(sims[i]->die_mutex);
 			
 				if (!(*(sims[i]->die_f)))
 				{
 					*(sims[i]->die_f) = 1; 
+					pthread_mutex_unlock(sims[i]->die_mutex);
 
 					long timestamp = (now.tv_sec - sims[i]->start.tv_sec) * 1000 +
 									(now.tv_usec - sims[i]->start.tv_usec) / 1000;
-
-					pthread_mutex_unlock(sims[i]->die_mutex);
+					
 					print_log(sims[i], " died3", timestamp);
 					pthread_mutex_lock(sims[0]->stop_mutex);
 					*(sims[0]->stop) = 1;
 					pthread_mutex_unlock(sims[0]->stop_mutex);
 					someone_died = 1;
-					break;
 				}
 				else
 				{
-					//*(sims[i]->die_f) = 1;
-					//someone_died = 1;
 					pthread_mutex_unlock(sims[i]->die_mutex);
-				}                    
+				}
+				break;
+			}	
+			if (sims[i]->ph->repeat > 0 && (*(sims[i]->times) >= sims[i]->ph->repeat))
+            {
+                philos_done_this_round++;
 			}
-			if (!someone_died && (*(sims[i]->times) < sims[i]->ph->repeat))
-				i++;
-        } 
-        if (!someone_died && (*(sims[i]->times) < sims[i]->ph->repeat))
-            usleep(1000);
-
+			i++;
+		}
+		if (philos_done_this_round == id_c)
+		{
+			pthread_mutex_lock(sims[0]->stop_mutex);
+			*(sims[0]->stop) = 1;
+			all_philos_finished_eating = 1;
+			pthread_mutex_unlock(sims[0]->stop_mutex);
+		}
+		if (!someone_died && !all_philos_finished_eating )
+			usleep(1000);      
     }
 	return(NULL);
 }
@@ -143,7 +155,7 @@ int	main(int ac, char **av)
 	pthread_mutex_t die_mutex;
 	pthread_mutex_t last_meal_mutex;
 	pthread_mutex_t stop_mutex;
-	pthread_t *threads = malloc(sizeof(pthread_t) * id_c+1);
+	pthread_t *threads = malloc(sizeof(pthread_t) * (id_c+1));
 	if (!threads) return(1);
 	t_simulation *sims[id_c];
 	
@@ -157,18 +169,27 @@ int	main(int ac, char **av)
 	initialize_mutexes(forks, &log_mutex, &die_mutex, &last_meal_mutex, &stop_mutex, id_c);
 	while (i <= id_c)
 	{
-		t_philo *ph = philosopher_initializer(ac, av, i, forks);
-		if (!ph)
-			return (1);
-		t_simulation *sim = simulation_initializer(ph, die_f, stop, start, id_c, &last_meal_mutex);
-		if (!sim)
-			return (1);
-		simulation_add_mutexes(sim, &log_mutex, &die_mutex, &stop_mutex);
-		sims[i] = sim;
+		
+		
 		if (i < id_c)
+		{
+			t_philo *ph = philosopher_initializer(ac, av, i, forks);
+			if (!ph)
+				return (1);
+			t_simulation *sim = simulation_initializer(ph, die_f, stop, start, id_c, &last_meal_mutex);
+			if (!sim)
+				return (1);
+			simulation_add_mutexes(sim, &log_mutex, &die_mutex, &stop_mutex);
+			sims[i] = sim;
+			int	rem3 = ph->id % 3;			
+			if (id_c %2 ==1 && id_c >= 3)
+				usleep(rem3 * 500);
 			pthread_create(&threads[i], NULL, task, sim);
-		if (i == id_c)
+		}
+		else
+		{			
 			pthread_create(&threads[i], NULL, monitor_threads, (void *)sims);
+		}		
 		usleep(100);
 		i++;
 	}
@@ -185,6 +206,5 @@ int	main(int ac, char **av)
 		free(sims[i]);
 		i++;
 	}
-	free(sims[id_c]);
 	return (0);
 }
