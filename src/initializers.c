@@ -109,7 +109,7 @@ t_simulation	*simulation_initializer(t_philo *ph, int *die_f, int *stop,
 		free(sim->times);
 		return (NULL);
 	}
-	*sim->times = 0;
+	*sim->times = 1;
 	return (sim);
 }
 
