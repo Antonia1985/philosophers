@@ -36,7 +36,6 @@ void	get_timestamps(t_simulation *sim, long *elapsed, long *timestamp)
 	*elapsed = (now.tv_sec - sim->last_meal_time->tv_sec) * 1000 + (now.tv_usec
 			- sim->last_meal_time->tv_usec) / 1000;
 	pthread_mutex_unlock(sim->last_meal_mutex);
-	
 	*timestamp = (now.tv_sec - sim->start.tv_sec) * 1000 + (now.tv_usec
 			- sim->start.tv_usec) / 1000;
 }
@@ -44,8 +43,8 @@ void	get_timestamps(t_simulation *sim, long *elapsed, long *timestamp)
 int	try_log_action_or_die(t_simulation *sim, const char *msg,
 		pthread_mutex_t *mutex1, pthread_mutex_t *mutex2)
 {
-	long elapsed;
-	long timestamp;
+	long	elapsed;
+	long	timestamp;
 
 	pthread_mutex_lock(sim->die_mutex);
 	get_timestamps(sim, &elapsed, &timestamp);
@@ -55,15 +54,19 @@ int	try_log_action_or_die(t_simulation *sim, const char *msg,
 		clean_after_death(mutex1, mutex2);
 		return (0);
 	}
-	if (elapsed > sim->ph->time_to_die)
+	if (elapsed >= sim->ph->time_to_die)
 	{
 		*(sim->die_f) = 1;
 		pthread_mutex_unlock(sim->die_mutex);
 		print_log(sim, " died2", timestamp);
 		clean_after_death(mutex1, mutex2);
+		pthread_mutex_lock(sim->stop_mutex);
+		*(sim->stop) = 1;
+		pthread_mutex_unlock(sim->stop_mutex);
 		return (0);
 	}
 	pthread_mutex_unlock(sim->die_mutex);
 	print_log(sim, msg, timestamp);
 	return (1);
 }
+

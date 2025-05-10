@@ -12,199 +12,113 @@
 
 #include "philo.h"
 
-void	join_threads(pthread_t threads[], int id_c)
+int	initializer(t_context *ctx)
+{
+	ctx->threads = malloc(sizeof(pthread_t) * (ctx->id_c + 1));
+	if (!ctx->threads)
+		return (0);
+	ctx->sims = malloc(sizeof(t_simulation *) * (ctx->id_c));
+	if (!ctx->sims)
+	{
+		free(ctx->threads);
+		return (0);
+	}
+	ctx->die_f = die_flag_initialize(ctx);
+	if (!ctx->die_f)
+		return (0);
+	ctx->stop = stop_flag_initialize(ctx);
+	if (!ctx->stop)
+		return (0);
+	ctx->forks = forks_initilizer(ctx);
+	if (!ctx->forks)
+		return (0);
+	initialize_mutexes(&ctx->log_mutex, &ctx->die_mutex, &ctx->last_meal_mutex,
+		&ctx->stop_mutex);
+	return (1);
+}
+
+int	validate_args_and_alloc(t_context *ctx, int ac, char **av)
+{
+	ctx->ac = ac;
+	ctx->av = av;
+	if (ac > 6 || ac < 5)
+	{
+		printf("Usage ./philo <number_of_philosophers> <time_to_die>"
+			" <time_to_eat> <time_to_sleep>"
+			" [number_of_times_each_philosopher_must_eat]\n");
+		return (1);
+	}
+	ctx->id_c = ft_atoi(av[1]);
+	gettimeofday(&ctx->start, NULL);
+	if (!initializer(ctx))
+		return (0);
+	return (1);
+}
+
+int	create_threads(t_context *ctx)
 {
 	int	i;
 
 	i = 0;
-	while (i <= id_c)
+	while (i < ctx->id_c)
 	{
-		pthread_join(threads[i], NULL);
+		ctx->ph = philosopher_initializer(ctx->ac, ctx->av, i, ctx->forks);
+		if (!ctx->ph)
+			return (1);
+		ctx->sim = simulation_initializer(ctx);
+		if (!ctx->sim)
+			return (1);
+		ctx->sim->log_mutex = &ctx->log_mutex;
+		ctx->sim->die_mutex = &ctx->die_mutex;
+		ctx->sim->stop_mutex = &ctx->stop_mutex;
+		ctx->sims[i] = ctx->sim;
+		pthread_create(&ctx->threads[i], NULL, task, ctx->sim);
+		usleep(100);
 		i++;
 	}
+	pthread_create(&ctx->threads[ctx->id_c], NULL, monitor_threads,
+		(void *)ctx->sims);
+	usleep(100);
+	join_threads(ctx->threads, ctx->id_c);
+	return (1);
 }
 
-void	destroy_mutexs(pthread_mutex_t forks[], int id_c)
+void	cleanup_and_exit_main(t_context *ctx)
 {
 	int	i;
 
+	destroy_mutexs(ctx->forks, ctx->id_c);
+	clean_mutexs_before_exit(&ctx->log_mutex, &ctx->die_mutex,
+		&ctx->last_meal_mutex, &ctx->stop_mutex);
+	clean_flags_before_exit(ctx->die_f, ctx->stop);
+	free(ctx->threads);
 	i = 0;
-	while (i < id_c)
+	while (i < ctx->id_c)
 	{
-		pthread_mutex_destroy(&forks[i]);
+		free(ctx->sims[i]->times);
+		free(ctx->sims[i]->last_meal_time);
+		free(ctx->sims[i]->ph);
+		free(ctx->sims[i]);
 		i++;
 	}
-}
-
-void	initialize_mutexes(pthread_mutex_t forks[], pthread_mutex_t *log_mutex,	
-	pthread_mutex_t *die_mutex, pthread_mutex_t *last_meal_mutex, pthread_mutex_t *stop_mutex, int id_c)
-{
-	pthread_mutex_init(log_mutex, NULL);
-	pthread_mutex_init(die_mutex, NULL);
-	pthread_mutex_init(last_meal_mutex, NULL);
-	pthread_mutex_init(stop_mutex, NULL);
-	forks_initilizer(forks, id_c);
-}
-
-void	clean_before_exit(pthread_mutex_t *log_mutex,
-		pthread_mutex_t *die_mutex, pthread_mutex_t *last_meal_mutex, pthread_mutex_t *stop_mutex, int *die_f, int *stop)
-{
-	free(die_f);
-	free(stop);
-	pthread_mutex_destroy(log_mutex);
-	pthread_mutex_destroy(die_mutex);
-	pthread_mutex_destroy(last_meal_mutex);
-	pthread_mutex_destroy(stop_mutex);
-}
-
-void*	monitor_threads(void *args)
-{
-	t_simulation **sims = (t_simulation **)args;
-	long time_to_die = sims[0]->ph->time_to_die;
-	int id_c = sims[0]->total_ph;
-
-    struct timeval now;
-    long elapsed;
-    int i;
-	
-	int all_philos_finished_eating = 0;
-	
-    int someone_died = 0;
-	
-	
-    while (!someone_died && !all_philos_finished_eating)
-    {
-        i = 0;
-		int philos_done_this_round = 0; // Counter for philos who met repeat count
-		
-		while (i < id_c && !someone_died && !all_philos_finished_eating)
-		{	
-			gettimeofday(&now, NULL);
-			pthread_mutex_lock(sims[i]->last_meal_mutex);           
-			if (!sims[i]->last_meal_time) 
-			{
-				pthread_mutex_unlock(sims[i]->last_meal_mutex);
-				i++;
-				continue;
-			}
-			elapsed = (now.tv_sec - sims[i]->last_meal_time->tv_sec) * 1000 +
-					(now.tv_usec - sims[i]->last_meal_time->tv_usec) / 1000;
-			pthread_mutex_unlock(sims[i]->last_meal_mutex);
-			
-			if (elapsed >= time_to_die)
-			{
-				pthread_mutex_lock(sims[i]->die_mutex);
-			
-				if (!(*(sims[i]->die_f)))
-				{
-					*(sims[i]->die_f) = 1; 
-					pthread_mutex_unlock(sims[i]->die_mutex);
-
-					long timestamp = (now.tv_sec - sims[i]->start.tv_sec) * 1000 +
-									(now.tv_usec - sims[i]->start.tv_usec) / 1000;
-					
-					print_log(sims[i], " died3", timestamp);
-					pthread_mutex_lock(sims[0]->stop_mutex);
-					*(sims[0]->stop) = 1;
-					pthread_mutex_unlock(sims[0]->stop_mutex);
-					someone_died = 1;
-				}
-				else
-				{
-					pthread_mutex_unlock(sims[i]->die_mutex);
-				}
-				break;
-			}	
-			if (sims[i]->ph->repeat > 0 && (*(sims[i]->times) >= sims[i]->ph->repeat))
-            {
-                philos_done_this_round++;
-			}
-			i++;
-		}
-		if (philos_done_this_round == id_c)
-		{
-			pthread_mutex_lock(sims[0]->stop_mutex);
-			*(sims[0]->stop) = 1;
-			all_philos_finished_eating = 1;
-			pthread_mutex_unlock(sims[0]->stop_mutex);
-		}
-		if (!someone_died && !all_philos_finished_eating )
-			usleep(1000);      
-    }
-	return(NULL);
+	free(ctx->sims);
 }
 
 int	main(int ac, char **av)
 {
-	if (ac > 6 || ac < 5)
+	t_context	*ctx;
+
+	ctx = malloc(sizeof(t_context));
+	if (!ctx)
 	{
-		printf("Usage ./philo <number_of_philosophers> <time_to_die> <time_to_eat> <time_to_sleep> [number_of_times_each_philosopher_must_eat]\n");
-		return (0);
-	}
-	int i;
-	int id_c;
-	struct timeval start;
-	int *die_f;
-	int *stop;
-		
-	i = 0;
-	id_c = ft_atoi(av[1]);
-	gettimeofday(&start, NULL);
-	pthread_mutex_t forks[id_c];
-	pthread_mutex_t log_mutex;
-	pthread_mutex_t die_mutex;
-	pthread_mutex_t last_meal_mutex;
-	pthread_mutex_t stop_mutex;
-	pthread_t *threads = malloc(sizeof(pthread_t) * (id_c+1));
-	if (!threads) return(1);
-	t_simulation *sims[id_c];
-	
-	die_f = die_flag_initialize();
-	if (!die_f)
+		printf("Failed to allocate memory for context\n");
 		return (1);
-	stop = stop_flag_initialize();
-	if (!stop)
+	}
+	if (!validate_args_and_alloc(ctx, ac, av))
 		return (1);
-	
-	initialize_mutexes(forks, &log_mutex, &die_mutex, &last_meal_mutex, &stop_mutex, id_c);
-	while (i <= id_c)
-	{
-		
-		
-		if (i < id_c)
-		{
-			t_philo *ph = philosopher_initializer(ac, av, i, forks);
-			if (!ph)
-				return (1);
-			t_simulation *sim = simulation_initializer(ph, die_f, stop, start, id_c, &last_meal_mutex);
-			if (!sim)
-				return (1);
-			simulation_add_mutexes(sim, &log_mutex, &die_mutex, &stop_mutex);
-			sims[i] = sim;
-			int	rem3 = ph->id % 3;			
-			if (id_c %2 ==1 && id_c >= 3)
-				usleep(rem3 * 500);
-			pthread_create(&threads[i], NULL, task, sim);
-		}
-		else
-		{			
-			pthread_create(&threads[i], NULL, monitor_threads, (void *)sims);
-		}		
-		usleep(100);
-		i++;
-	}
-	join_threads(threads, id_c);
-	destroy_mutexs(forks, id_c);
-	clean_before_exit(&log_mutex, &die_mutex, &last_meal_mutex, &stop_mutex, die_f, stop);
-	free(threads);
-	i = 0;
-	while(i < id_c)
-	{
-		free(sims[i]->times);
-		free(sims[i]->last_meal_time);
-		free(sims[i]->ph);
-		free(sims[i]);
-		i++;
-	}
+	if (!create_threads(ctx))
+		return (1);
+	cleanup_and_exit_main(ctx);
+	free(ctx);
 	return (0);
 }
