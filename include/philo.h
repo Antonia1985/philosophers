@@ -13,57 +13,104 @@
 #ifndef PHILO_H
 # define PHILO_H
 
-#include <pthread.h>
-#include <stdio.h>
-#include <sys/time.h>
-#include <stdlib.h>
-#include <unistd.h>
+# include <pthread.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <sys/time.h>
+# include <unistd.h>
 
-typedef struct s_philosopher{
-    int id;
-    int time_to_sleep;
-    int time_to_eat;
-    int time_to_die;
-    int repeat;
-    pthread_mutex_t* left_fork;
-    pthread_mutex_t* right_fork;
-    
-}t_philo;
+typedef struct s_philosopher
+{
+	int				id;
+	int				time_to_sleep;
+	int				time_to_eat;
+	int				time_to_die;
+	int				repeat;
+	pthread_mutex_t	*left_fork;
+	pthread_mutex_t	*right_fork;
 
-typedef struct s_simulation{
-    t_philo *ph;
-    struct timeval start;
-    int *die_f;
-    int *stop;
-    int *times;
-    int total_ph;
-    struct timeval *last_meal_time;    
-    pthread_mutex_t	*die_mutex;
-    pthread_mutex_t *log_mutex;
-    pthread_mutex_t *last_meal_mutex;
-    pthread_mutex_t *stop_mutex;
+}					t_philo;
 
-}t_simulation;
+typedef struct s_simulation
+{
+	t_philo			*ph;
+	struct timeval	start;
+	int				*die_f;
+	int				*stop;
+	int				*times;
+	int				total_ph;
+	struct timeval	*last_meal_time;
+	pthread_mutex_t	*die_mutex;
+	pthread_mutex_t	*log_mutex;
+	pthread_mutex_t	*last_meal_mutex;
+	pthread_mutex_t	*stop_mutex;
 
-int     main(int ac, char **av);
+}					t_simulation;
 
-int     ft_atoi(const char *nptr);
-long	ft_atol(const char *nptr);
+typedef struct s_context
+{
+	int				ac;
+	char			**av;
+	int				id_c;
+	struct timeval	start;
+	int				*die_f;
+	int				*stop;
+	t_philo			*ph;
+	t_simulation	*sim;
+	t_simulation	**sims;
+	pthread_t		*threads;
+	pthread_mutex_t	log_mutex;
+	pthread_mutex_t	die_mutex;
+	pthread_mutex_t	last_meal_mutex;
+	pthread_mutex_t	stop_mutex;
+	pthread_mutex_t	*forks;
+}					t_context;
 
-void    clean_after_death(pthread_mutex_t *mutex1, pthread_mutex_t *mutex2);
-void    print_log(t_simulation *sim, const char * msg, long timestamp);
-void    get_timestamps(t_simulation *sim, long *elapsed, long *timestamp);
-int   try_log_action_or_die(t_simulation *sim, const char * msg, pthread_mutex_t *mutex1, pthread_mutex_t *mutex2);
+int					main(int ac, char **av);
 
-void	*task(void *args);
+void				join_threads(pthread_t threads[], int id_c);
+void				destroy_mutexs(pthread_mutex_t forks[], int id_c);
+void				initialize_mutexes(pthread_mutex_t *log_mutex,
+						pthread_mutex_t *die_mutex,
+						pthread_mutex_t *last_meal_mutex,
+						pthread_mutex_t *stop_mutex);
+void				clean_mutexs_before_exit(pthread_mutex_t *log_mutex,
+						pthread_mutex_t *die_mutex,
+						pthread_mutex_t *last_meal_mutex,
+						pthread_mutex_t *stop_mutex);
+void				clean_flags_before_exit(int *die_f, int *stop);
 
-int     *die_flag_initialize();
-int     *stop_flag_initialize();
-void    forks_initilizer( pthread_mutex_t forks[], int n);
-t_simulation *simulation_initializer(t_philo *ph, int *die_f, int *stop, struct timeval start, int id_c, pthread_mutex_t *last_meal_mutex);
-void    simulation_add_mutexes(t_simulation *sim, pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex, pthread_mutex_t *stop_mutex);
-struct timeval  *last_meal_initializer(t_simulation *sim, struct timeval start);
-t_philo    *philosopher_initializer(int ac, char **av, int i, pthread_mutex_t forks[]);
-void    clean_before_exit(pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex, pthread_mutex_t *last_meal_mutex, pthread_mutex_t *stop_mutex,int *die_f, int *stop);
+int					ft_atoi(const char *nptr);
+long				ft_atol(const char *nptr);
+
+void				*monitor_threads(void *args);
+
+void				clean_after_death(pthread_mutex_t *mutex1,
+						pthread_mutex_t *mutex2);
+void				print_log(t_simulation *sim, const char *msg,
+						long timestamp);
+void				get_timestamps(t_simulation *sim, long *elapsed,
+						long *timestamp);
+int					try_log_action_or_die(t_simulation *sim, const char *msg,
+						pthread_mutex_t *mutex1, pthread_mutex_t *mutex2);
+
+void				*task(void *args);
+int					sleep_in_ms(t_simulation *sim, int ms);
+int					philo_takes_fork(t_simulation *sim);
+int					philo_eats(t_simulation *sim);
+int					philo_sleeps(t_simulation *sim);
+int					philo_thinks(t_simulation *sim);
+int					*die_flag_initialize(t_context *ctx);
+int					*stop_flag_initialize(t_context *ctx);
+pthread_mutex_t		*forks_initilizer(t_context *ctx);
+t_simulation		*simulation_initializer(t_context *ctx);
+void				simulation_add_mutexes(t_simulation *sim,
+						pthread_mutex_t *log_mutex, pthread_mutex_t *die_mutex,
+						pthread_mutex_t *stop_mutex);
+struct timeval		*last_meal_initializer(t_simulation *sim,
+						struct timeval start);
+int					*times_initializer(t_simulation *sim);
+t_philo				*philosopher_initializer(int ac, char **av, int i,
+						pthread_mutex_t forks[]);
 
 #endif
