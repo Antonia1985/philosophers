@@ -14,8 +14,13 @@
 
 int	philo_takes_fork(t_simulation *sim)
 {
-	if (sim->ph->id % 2 == 0)
+	if (sim->total_ph %2 == 1 && sim->total_ph >=3)
 	{
+		int				rem3;	
+		rem3 = sim->ph->id % 3;
+		if (sim->total_ph % 2 == 1 && sim->total_ph >= 3)
+			usleep(rem3 * 500);
+		
 		pthread_mutex_lock(sim->ph->left_fork);
 		if (!try_log_action_or_die(sim, " has taken the LEFT fork",
 				sim->ph->left_fork, NULL))
@@ -27,15 +32,29 @@ int	philo_takes_fork(t_simulation *sim)
 	}
 	else
 	{
-		pthread_mutex_lock(sim->ph->right_fork);
-		if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
-				sim->ph->right_fork, NULL))
-			return (0);
-		pthread_mutex_lock(sim->ph->left_fork);
-		if (!try_log_action_or_die(sim, " has taken the LEFT fork",
-				sim->ph->left_fork, sim->ph->right_fork))
-			return (0);
-	}
+		if (sim->ph->id % 2 == 0)
+		{
+			pthread_mutex_lock(sim->ph->left_fork);
+			if (!try_log_action_or_die(sim, " has taken the LEFT fork",
+					sim->ph->left_fork, NULL))
+				return (0);
+			pthread_mutex_lock(sim->ph->right_fork);
+			if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
+					sim->ph->left_fork, sim->ph->right_fork))
+				return (0);
+		}
+		else
+		{
+			pthread_mutex_lock(sim->ph->right_fork);
+			if (!try_log_action_or_die(sim, " has taken the RIGHT fork",
+					sim->ph->right_fork, NULL))
+				return (0);
+			pthread_mutex_lock(sim->ph->left_fork);
+			if (!try_log_action_or_die(sim, " has taken the LEFT fork",
+					sim->ph->left_fork, sim->ph->right_fork))
+				return (0);
+		}
+	}	
 	return (1);
 }
 
@@ -44,11 +63,25 @@ int	philo_eats(t_simulation *sim)
 	pthread_mutex_lock(sim->last_meal_mutex);
 	gettimeofday(sim->last_meal_time, NULL);
 	pthread_mutex_unlock(sim->last_meal_mutex);
+
 	if (!try_log_action_or_die(sim, " is eating", NULL, NULL))
 		return (0);
+    // *(sim->times) = i;
+	
+	
+	//afto kanei oli ti zimiaaaa
+    
+	
+	//pthread_mutex_lock(sim->log_mutex);
+	//printf("Times: %i for philosopher no %i\n", *(sim->times), sim->ph->id);
+	//pthread_mutex_unlock(sim->log_mutex);
+	
 	sleep_in_ms(sim, sim->ph->time_to_eat);
+	
 	pthread_mutex_unlock(sim->ph->left_fork);
 	pthread_mutex_unlock(sim->ph->right_fork);
+
+	//(*sim->times) ++;
 	return (1);
 }
 
@@ -64,5 +97,7 @@ int	philo_thinks(t_simulation *sim)
 {
 	if (!try_log_action_or_die(sim, "is thinking", sim->log_mutex, NULL))
 		return (0);
+
+	(*sim->times) ++;
 	return (1);
 }

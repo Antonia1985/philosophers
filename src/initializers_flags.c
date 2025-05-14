@@ -22,6 +22,7 @@ int	*die_flag_initialize(t_context *ctx)
 		printf("Failed to allocate memmory for die_f flag");
 		free(ctx->threads);
 		free(ctx->sims);
+		free(ctx);
 		return (NULL);
 	}
 	*die_f = 0;
@@ -39,6 +40,7 @@ int	*stop_flag_initialize(t_context *ctx)
 		free(ctx->threads);
 		free(ctx->sims);
 		free(ctx->die_f);
+		free(ctx);
 		return (NULL);
 	}
 	*stop = 0;

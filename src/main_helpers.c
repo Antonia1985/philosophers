@@ -24,7 +24,7 @@ void	join_threads(pthread_t threads[], int id_c)
 	}
 }
 
-void	destroy_mutexs(pthread_mutex_t forks[], int id_c)
+void	destroy_fork_mutexs(pthread_mutex_t forks[], int id_c)
 {
 	int	i;
 
@@ -46,7 +46,7 @@ void	initialize_mutexes(pthread_mutex_t *log_mutex,
 	pthread_mutex_init(stop_mutex, NULL);
 }
 
-void	clean_mutexs_before_exit(pthread_mutex_t *log_mutex,
+void	destroy_mutexs_before_exit(pthread_mutex_t *log_mutex,
 		pthread_mutex_t *die_mutex, pthread_mutex_t *last_meal_mutex,
 		pthread_mutex_t *stop_mutex)
 {
