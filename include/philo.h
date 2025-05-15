@@ -45,6 +45,7 @@ typedef struct s_simulation
 	pthread_mutex_t	*last_meal_mutex;
 	pthread_mutex_t	*stop_mutex;
 	pthread_mutex_t	times_mutex;
+	int				marked_done;
 
 }					t_simulation;
 
@@ -68,6 +69,8 @@ typedef struct s_context
 }					t_context;
 
 int					main(int ac, char **av);
+int					mallocator1(t_context *ctx);
+int					mallocator2(t_context *ctx);
 
 void				join_threads(pthread_t threads[], int id_c);
 void				destroy_fork_mutexs(pthread_mutex_t forks[], int id_c);
@@ -94,15 +97,15 @@ int					try_log_action_or_die(t_simulation *sim, const char *msg,
 						pthread_mutex_t *mutex1, pthread_mutex_t *mutex2);
 
 void				*task(void *args);
-int					check_stop(pthread_mutex_t *stop_mutex, int * stop);
-int					check_die_f(pthread_mutex_t *die_mutex, int * die_f);
+int					check_stop(pthread_mutex_t *stop_mutex, int *stop);
+int					check_die_f(pthread_mutex_t *die_mutex, int *die_f);
 void				sleep_in_ms(t_simulation *sim, int ms);
 int					philo_takes_fork(t_simulation *sim);
 int					philo_eats(t_simulation *sim);
 int					philo_sleeps(t_simulation *sim);
 int					philo_thinks(t_simulation *sim);
-int					*die_flag_initialize();
-int					*stop_flag_initialize();
+int					*die_flag_initialize(void);
+int					*stop_flag_initialize(void);
 pthread_mutex_t		*forks_initilizer(t_context *ctx);
 t_simulation		*simulation_initializer(t_context *ctx);
 void				simulation_add_mutexes(t_simulation *sim,
@@ -113,9 +116,14 @@ struct timeval		*last_meal_initializer(t_simulation *sim,
 int					*times_initializer(t_simulation *sim);
 t_philo				*philosopher_initializer(int ac, char **av, int i,
 						pthread_mutex_t forks[]);
-int					check_if_sbdy_died(t_simulation *sim, int*die);
-int					check_flags_to_exit(int *die_f, int *stop, pthread_mutex_t *die_mutex, pthread_mutex_t *stop_mutex);
+int					check_if_sbdy_died(t_simulation *sim, int *die);
+int					check_flags_to_exit(int *die_f, int *stop,
+						pthread_mutex_t *die_mutex,
+						pthread_mutex_t *stop_mutex);
 long				get_timestamp(struct timeval now, struct timeval *start);
-long				get_elapsed(struct timeval now, pthread_mutex_t *last_meal_mutex, struct timeval *last_meal_time);
-void				update_death_flags_and_log(t_simulation *sim, struct timeval now);
+long				get_elapsed(struct timeval now,
+						pthread_mutex_t *last_meal_mutex,
+						struct timeval *last_meal_time);
+void				update_death_flags_and_log(t_simulation *sim,
+						struct timeval now);
 #endif
