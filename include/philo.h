@@ -44,6 +44,7 @@ typedef struct s_simulation
 	pthread_mutex_t	*log_mutex;
 	pthread_mutex_t	*last_meal_mutex;
 	pthread_mutex_t	*stop_mutex;
+	pthread_mutex_t	times_mutex;
 
 }					t_simulation;
 
@@ -100,8 +101,8 @@ int					philo_takes_fork(t_simulation *sim);
 int					philo_eats(t_simulation *sim);
 int					philo_sleeps(t_simulation *sim);
 int					philo_thinks(t_simulation *sim);
-int					*die_flag_initialize(t_context *ctx);
-int					*stop_flag_initialize(t_context *ctx);
+int					*die_flag_initialize();
+int					*stop_flag_initialize();
 pthread_mutex_t		*forks_initilizer(t_context *ctx);
 t_simulation		*simulation_initializer(t_context *ctx);
 void				simulation_add_mutexes(t_simulation *sim,
