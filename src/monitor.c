@@ -64,10 +64,20 @@ int	check_if_sbdy_died(t_simulation *sim, int *someone_died)
 
 void	update_philos_who_finished_all_rounds(t_simulation *sim, int *philos_done_this_round)
 {
-    if (sim->ph->repeat > 0 && (*(sim->times) >= sim->ph->repeat))
+    pthread_mutex_lock(&sim->times_mutex);
+    if (sim->ph->repeat > 0 && ((*sim->times) >= sim->ph->repeat))
     {
-       (*philos_done_this_round)++;
+       (*philos_done_this_round)++; 
+       
+       if((*sim->times) == sim->ph->repeat)
+        {
+            pthread_mutex_lock(sim->log_mutex);
+            printf("Just finished his round (%i / %i) philosopher no %i. Already finished: %i\n",
+                (*sim->times), sim->ph->repeat, sim->ph->id, *philos_done_this_round);
+            pthread_mutex_unlock(sim->log_mutex);
+        }     
     }
+    pthread_mutex_unlock(&sim->times_mutex);
 }
 
 // int check_sims_times_equals_repeat(t_simulation **sims, int num_sims) {
@@ -110,11 +120,13 @@ void	*monitor_threads(void *args)
             if (!check_if_sbdy_died(sim, &someone_died))
                 break ;
             
-            update_philos_who_finished_all_rounds(sim, &philos_done_this_round);
+            update_philos_who_finished_all_rounds(sim, &philos_done_this_round);            
+            pthread_mutex_unlock(&sims[i]->times_mutex);     
 			i++;
 		}
-		if (philos_done_this_round == sims[0]->total_ph)	
-            update_philos_finished(sims[0], &all_philos_finished_eating);
+        if (philos_done_this_round == sims[0]->total_ph)
+            update_philos_finished(sims[0], &all_philos_finished_eating); 
+		           
 		if (!someone_died && !all_philos_finished_eating)
 			usleep(1000);
 	}

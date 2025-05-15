@@ -1,3 +1,4 @@
+
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
@@ -50,11 +51,6 @@ pthread_mutex_t	*forks_initilizer(t_context *ctx)
 	if (!forks)
 	{
 		printf("Failed to allocate memmory for stop flag");
-		free(ctx->threads);
-		free(ctx->sims);
-		free(ctx->die_f);
-		free(ctx->stop);
-		free(ctx);
 		return (NULL);
 	}
 	j = 0;
@@ -114,6 +110,7 @@ t_simulation	*simulation_initializer(t_context *ctx)
 	ctx->sim->last_meal_time = last_meal_initializer(ctx->sim, ctx->start);
 	if (!ctx->sim->last_meal_time)
 		return (NULL);
+	pthread_mutex_init(&ctx->sim->times_mutex, NULL);
 	ctx->sim->times = times_initializer(ctx->sim);
 	if (!ctx->sim->times)
 		return (NULL);
@@ -148,6 +145,8 @@ int	*times_initializer(t_simulation *sim)
 		free(sim);
 		return (NULL);
 	}
+	pthread_mutex_lock(&sim->times_mutex);
 	*times = 0;
+	pthread_mutex_unlock(&sim->times_mutex);
 	return (times);
 }

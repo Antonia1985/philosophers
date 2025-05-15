@@ -56,49 +56,41 @@ int	check_die_f(pthread_mutex_t *die_mutex, int * die_f)
 int	routine(t_simulation *sim)
 {
 	if (check_stop(sim->stop_mutex, sim->stop) || check_die_f(sim->die_mutex, sim->die_f))
-		return (0);
-	pthread_mutex_unlock(sim->die_mutex);
+		return (0);	
 	if (sim->total_ph == 1)
 	{
 		one_philo(sim);
 		return (0);
-	}
-	if (check_stop(sim->stop_mutex, sim->stop) || check_die_f(sim->die_mutex, sim->die_f))
-		return (0);
+	}	
 	if (!philo_takes_fork(sim))
-		return (0);
-	if (check_stop(sim->stop_mutex, sim->stop) || check_die_f(sim->die_mutex, sim->die_f))
-		return (0);
+		return (0);	
 	if (!philo_eats(sim))
-		return (0);
-	if (check_stop(sim->stop_mutex, sim->stop) || check_die_f(sim->die_mutex, sim->die_f))
-		return (0);
+		return (0);	
 	if (!philo_sleeps(sim))
-		return (0);
-	if (check_stop(sim->stop_mutex, sim->stop) || check_die_f(sim->die_mutex, sim->die_f))
-		return (0);
+		return (0);	
 	if (!philo_thinks(sim))
 		return (0);
-
+	pthread_mutex_lock(&sim->times_mutex);
+	(*sim->times)++;
+	pthread_mutex_unlock(&sim->times_mutex);
 	return (1);
 }
 
 void	*task(void *args)
 {
 	t_simulation	*sim;
-	int				i;
+	//int				i;
 	int				rem3;
 
 	sim = (t_simulation *)args;
 	rem3 = sim->ph->id % 3;
 	if (sim->total_ph % 2 == 1 && sim->total_ph >= 3)
 		usleep(rem3 * 500);
-	i = 0;
-	while (((sim->ph->repeat == 0) || i < sim->ph->repeat))
+	//i = 0;			
+	while ((sim->ph->repeat == 0) ||  *sim->times < sim->ph->repeat)//) && !check_stop(sim->stop_mutex, sim->stop))
 	{		
 		if (!routine(sim))
-			break ;
-		i++;
+			break ;		
 	}
 	return (NULL);
 }

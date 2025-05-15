@@ -115,8 +115,7 @@ int	check_if_sbdy_died1(t_simulation *sim, int *someone_died, int *philos_done_t
        *someone_died = log_death1(sim, now);
         return(0) ;
     }
-    if (sim->ph->repeat > 0
-        && (*(sim->times) >= sim->ph->repeat))
+    if (sim->ph->repeat > 0 && ((*sim->times) >= sim->ph->repeat))
     {
        (*philos_done_this_round)++;
     }

@@ -12,7 +12,7 @@
 
 #include "philo.h"
 
-int	*die_flag_initialize(t_context *ctx)
+int	*die_flag_initialize()
 {
 	int	*die_f;
 
@@ -20,27 +20,20 @@ int	*die_flag_initialize(t_context *ctx)
 	if (!die_f)
 	{
 		printf("Failed to allocate memmory for die_f flag");
-		free(ctx->threads);
-		free(ctx->sims);
-		free(ctx);
 		return (NULL);
 	}
 	*die_f = 0;
 	return (die_f);
 }
 
-int	*stop_flag_initialize(t_context *ctx)
+int	*stop_flag_initialize()
 {
 	int	*stop;
 
 	stop = malloc(sizeof(int));
 	if (!stop)
 	{
-		printf("Failed to allocate memmory for stop flag");
-		free(ctx->threads);
-		free(ctx->sims);
-		free(ctx->die_f);
-		free(ctx);
+		printf("Failed to allocate memmory for stop flag");		
 		return (NULL);
 	}
 	*stop = 0;

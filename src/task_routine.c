@@ -32,7 +32,7 @@ int	philo_takes_fork(t_simulation *sim)
 	}
 	else
 	{
-		if (sim->ph->id % 2 == 0)
+		if (sim->ph->id % 2 == 0) 
 		{
 			pthread_mutex_lock(sim->ph->left_fork);
 			if (!try_log_action_or_die(sim, " has taken the LEFT fork",
@@ -66,22 +66,10 @@ int	philo_eats(t_simulation *sim)
 
 	if (!try_log_action_or_die(sim, " is eating", NULL, NULL))
 		return (0);
-    // *(sim->times) = i;
-	
-	
-	//afto kanei oli ti zimiaaaa
-    
-	
-	//pthread_mutex_lock(sim->log_mutex);
-	//printf("Times: %i for philosopher no %i\n", *(sim->times), sim->ph->id);
-	//pthread_mutex_unlock(sim->log_mutex);
-	
-	sleep_in_ms(sim, sim->ph->time_to_eat);
+    sleep_in_ms(sim, sim->ph->time_to_eat);
 	
 	pthread_mutex_unlock(sim->ph->left_fork);
 	pthread_mutex_unlock(sim->ph->right_fork);
-
-	//(*sim->times) ++;
 	return (1);
 }
 
@@ -98,6 +86,9 @@ int	philo_thinks(t_simulation *sim)
 	if (!try_log_action_or_die(sim, "is thinking", sim->log_mutex, NULL))
 		return (0);
 
-	(*sim->times) ++;
+	//pthread_mutex_lock(&sim->times_mutex);
+	//(*sim->times)++;
+	//pthread_mutex_unlock(&sim->times_mutex);
+
 	return (1);
 }

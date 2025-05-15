@@ -16,26 +16,37 @@ int	initializer(t_context *ctx)
 {
 	ctx->threads = malloc(sizeof(pthread_t) * (ctx->id_c + 1));
 	if (!ctx->threads)
-	{
-		free(ctx);
-		return (0);	}
-		
+		return (0);		
 	ctx->sims = malloc(sizeof(t_simulation *) * (ctx->id_c));
 	if (!ctx->sims)
 	{
 		free(ctx->threads);
-		free(ctx);
 		return (0);
 	}
-	ctx->die_f = die_flag_initialize(ctx);
+	ctx->die_f = die_flag_initialize();
 	if (!ctx->die_f)
+	{
+		free(ctx->sims);
+		free(ctx->threads);
 		return (0);
-	ctx->stop = stop_flag_initialize(ctx);
+	}		
+	ctx->stop = stop_flag_initialize();
 	if (!ctx->stop)
+	{
+		free(ctx->sims);
+		free(ctx->threads);
+		free(ctx->die_f);
 		return (0);
+	}
 	ctx->forks = forks_initilizer(ctx);
 	if (!ctx->forks)
+	{
+		free(ctx->sims);
+		free(ctx->threads);
+		free(ctx->die_f);
+		free(ctx->stop);
 		return (0);
+	}				
 	initialize_mutexes(&ctx->log_mutex, &ctx->die_mutex, &ctx->last_meal_mutex,
 		&ctx->stop_mutex);
 	return (1);
@@ -53,6 +64,11 @@ int	validate_args_and_alloc(t_context *ctx, int ac, char **av)
 		return (0);
 	}
 	ctx->id_c = ft_atoi(av[1]);
+	if (ctx->id_c <= 0 ||  ft_atoi(av[2]) <= 0 ||  ft_atoi(av[3]) <= 0 ||  ft_atoi(av[4]) <= 0)
+    {
+		printf("Arguments must be > 0");
+		return (1);
+	}
 	gettimeofday(&ctx->start, NULL);
 	if (!initializer(ctx))
 	{
@@ -76,13 +92,7 @@ int	create_threads(t_context *ctx)
 			return (1);
 		ctx->sim = simulation_initializer(ctx);
 		if (!ctx->sim)
-		{
-			if(ctx->sim->times)
-				free(ctx->sim->times);
-			if(ctx->sim->last_meal_time)
-				free(ctx->sim->last_meal_time);
 			return (1);
-		}		
 		ctx->sim->log_mutex = &ctx->log_mutex;
 		ctx->sim->die_mutex = &ctx->die_mutex;
 		ctx->sim->stop_mutex = &ctx->stop_mutex;
@@ -111,10 +121,14 @@ void	cleanup_and_exit_main(t_context *ctx)
 	i = 0;
 	while (i < ctx->id_c)
 	{
-		free(ctx->sims[i]->times);
-		free(ctx->sims[i]->last_meal_time);
-		free(ctx->sims[i]->ph);
-		free(ctx->sims[i]);
+		if (ctx->sims[i])
+		{
+			pthread_mutex_destroy(&ctx->sims[i]->times_mutex);
+			free(ctx->sims[i]->times);
+			free(ctx->sims[i]->last_meal_time);
+			free(ctx->sims[i]->ph);
+			free(ctx->sims[i]);
+		}
 		i++;
 	}
 	free(ctx->sims);
