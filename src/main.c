@@ -12,46 +12,6 @@
 
 #include "philo.h"
 
-int	initializer(t_context *ctx)
-{
-	ctx->threads = malloc(sizeof(pthread_t) * (ctx->id_c + 1));
-	if (!ctx->threads)
-		return (0);		
-	ctx->sims = malloc(sizeof(t_simulation *) * (ctx->id_c));
-	if (!ctx->sims)
-	{
-		free(ctx->threads);
-		return (0);
-	}
-	ctx->die_f = die_flag_initialize();
-	if (!ctx->die_f)
-	{
-		free(ctx->sims);
-		free(ctx->threads);
-		return (0);
-	}		
-	ctx->stop = stop_flag_initialize();
-	if (!ctx->stop)
-	{
-		free(ctx->sims);
-		free(ctx->threads);
-		free(ctx->die_f);
-		return (0);
-	}
-	ctx->forks = forks_initilizer(ctx);
-	if (!ctx->forks)
-	{
-		free(ctx->sims);
-		free(ctx->threads);
-		free(ctx->die_f);
-		free(ctx->stop);
-		return (0);
-	}				
-	initialize_mutexes(&ctx->log_mutex, &ctx->die_mutex, &ctx->last_meal_mutex,
-		&ctx->stop_mutex);
-	return (1);
-}
-
 int	validate_args_and_alloc(t_context *ctx, int ac, char **av)
 {
 	ctx->ac = ac;
@@ -64,28 +24,28 @@ int	validate_args_and_alloc(t_context *ctx, int ac, char **av)
 		return (0);
 	}
 	ctx->id_c = ft_atoi(av[1]);
-	if (ctx->id_c <= 0 ||  ft_atoi(av[2]) <= 0 ||  ft_atoi(av[3]) <= 0 ||  ft_atoi(av[4]) <= 0)
-    {
+	if (ctx->id_c <= 0 || ft_atoi(av[2]) <= 0 || ft_atoi(av[3]) <= 0
+		|| ft_atoi(av[4]) <= 0)
+	{
 		printf("Arguments must be > 0");
-		return (1);
+		return (0);
 	}
 	gettimeofday(&ctx->start, NULL);
-	if (!initializer(ctx))
+	if (!mallocator1(ctx) || !mallocator2(ctx))
 	{
-		if(ctx->forks)
+		if (ctx->forks)
 			free(ctx->forks);
-		return (0);	
+		return (0);
 	}
-			
 	return (1);
-}
+} 
 
 int	create_threads(t_context *ctx)
 {
 	int	i;
 
 	i = 0;
-	while (i < ctx->id_c)
+	while (i < ctx->id_c) 
 	{
 		ctx->ph = philosopher_initializer(ctx->ac, ctx->av, i, ctx->forks);
 		if (!ctx->ph)
@@ -147,15 +107,13 @@ int	main(int ac, char **av)
 	}
 	if (!validate_args_and_alloc(ctx, ac, av))
 	{
-		//free(ctx);
 		return (1);
 	}
 	if (!create_threads(ctx))
 	{
 		cleanup_and_exit_main(ctx);
 		return (1);
-	}		
+	}
 	cleanup_and_exit_main(ctx);
-	
 	return (0);
 }

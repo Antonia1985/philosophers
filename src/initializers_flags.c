@@ -12,7 +12,7 @@
 
 #include "philo.h"
 
-int	*die_flag_initialize()
+int	*die_flag_initialize(void)
 {
 	int	*die_f;
 
@@ -26,14 +26,14 @@ int	*die_flag_initialize()
 	return (die_f);
 }
 
-int	*stop_flag_initialize()
+int	*stop_flag_initialize(void)
 {
 	int	*stop;
 
 	stop = malloc(sizeof(int));
 	if (!stop)
 	{
-		printf("Failed to allocate memmory for stop flag");		
+		printf("Failed to allocate memmory for stop flag");
 		return (NULL);
 	}
 	*stop = 0;

@@ -1,4 +1,3 @@
-
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
@@ -10,7 +9,6 @@
 /*   Updated: 2025/05/01 15:41:28 by apavlopo         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
-
 #include "philo.h"
 
 t_philo	*philosopher_initializer(int ac, char **av, int i,
@@ -62,35 +60,6 @@ pthread_mutex_t	*forks_initilizer(t_context *ctx)
 	return (forks);
 }
 
-// t_simulation	*simulation_initializer(t_context *ctx)
-// {
-// 	t_simulation *sim = malloc(sizeof(t_simulation));
-// 	if (!sim)
-// 	{
-// 		printf("Failed to allocate memmory for sim");
-// 		// free(ctx->ph);
-// 		// free(ctx);
-// 		return (NULL);
-// 	}
-// 	sim->stop = ctx->stop;
-// 	sim->die_f = ctx->die_f;
-// 	sim->start = ctx->start;
-// 	sim->ph = ctx->ph;
-// 	sim->total_ph = ctx->id_c;
-// 	sim->last_meal_mutex = &ctx->last_meal_mutex;
-// 	sim->last_meal_time = last_meal_initializer(sim, ctx->start);
-// 	if (!sim->last_meal_time)
-// 		return (NULL);
-// 	sim->times = times_initializer(sim);
-// 	if (!sim->times)
-// 	{
-// 		free(sim->last_meal_time);
-//         free(sim);
-// 		return (NULL);
-// 	}
-// 	return (sim);
-// }
-
 t_simulation	*simulation_initializer(t_context *ctx)
 {
 	ctx->sim = malloc(sizeof(t_simulation));
@@ -114,6 +83,7 @@ t_simulation	*simulation_initializer(t_context *ctx)
 	ctx->sim->times = times_initializer(ctx->sim);
 	if (!ctx->sim->times)
 		return (NULL);
+	ctx->sim->marked_done = 0;
 	return (ctx->sim);
 }
 
