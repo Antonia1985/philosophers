@@ -104,8 +104,7 @@ int					philo_takes_fork(t_simulation *sim);
 int					philo_eats(t_simulation *sim);
 int					philo_sleeps(t_simulation *sim);
 int					philo_thinks(t_simulation *sim);
-int					*die_flag_initialize(void);
-int					*stop_flag_initialize(void);
+int					*flag_initialize(void);
 pthread_mutex_t		*forks_initilizer(t_context *ctx);
 t_simulation		*simulation_initializer(t_context *ctx);
 void				simulation_add_mutexes(t_simulation *sim,
