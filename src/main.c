@@ -65,7 +65,7 @@ int	create_threads(t_context *ctx)
 		(void *)ctx->sims);
 	usleep(100);
 	join_threads(ctx->threads, ctx->id_c);
-	return (0);
+	return (1);
 }
 
 void	cleanup_and_exit_main(t_context *ctx)
